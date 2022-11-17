@@ -243,7 +243,7 @@ private:
         static const float CT_Offset = 1391.f;     // Color Temperatuer Offset
 
         // Analog/Digital saturation (DN40 3.5)
-        float saturation = (256 - atime > 63) ? 65535 : 1024 * (256 - atime);
+        float saturation = (256 - atime > 63) ? 65535 : 1024.f * (256 - atime);
 
         // Ripple saturation (DN40 3.7)
         if (integration_time < 150)
