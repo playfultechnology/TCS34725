@@ -1,6 +1,11 @@
 # TCS34725
 
-Arduino library for TCS34725 RGB Color Sensor
+Arduino library for TCS34725 RGB Color Sensor.
+
+As with all Arduino libraries, I recommend either copying to the libaries subfolder of your sketchbook directory, or (as I prefer) create a symbolic link there to the location where you actually installed it, i.e.:
+```
+mklink /D C:\Users\alast\Documents\Arduino\libraries\TCS34725 C:\Users\alast\Documents\GitHub\TCS34725
+```
 
 ## Description
 
