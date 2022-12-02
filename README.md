@@ -2,6 +2,8 @@
 
 Arduino library for TCS34725 RGB Color Sensor.
 
+Note that this sensor contains a fixed I2C address of 0x29, which cannot be changed. So, if you want to use this at the same time as any other I2C sensors that use the same address (such as the [common CAP1188 or VL53L0X sensors](https://i2cdevices.org/addresses/0x29)), or if you want to use several colour sensors, you'll need to use an I2C multiplexer such as the TCA9548A - an example is provided.
+
 As with all Arduino libraries, I recommend either copying to the libaries subfolder of your sketchbook directory, or (as I prefer) create a symbolic link there to the location where you actually installed it, i.e.:
 ```
 mklink /D C:\Users\alast\Documents\Arduino\libraries\TCS34725 C:\Users\alast\Documents\GitHub\TCS34725
