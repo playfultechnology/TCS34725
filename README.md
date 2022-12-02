@@ -2,13 +2,6 @@
 
 Arduino library for TCS34725 RGB Color Sensor.
 
-Note that this sensor contains a fixed I2C address of 0x29, which cannot be changed. So, if you want to use this at the same time as any other I2C sensors that use the same address (such as the [common CAP1188 or VL53L0X sensors](https://i2cdevices.org/addresses/0x29)), or if you want to use several colour sensors, you'll need to use an I2C multiplexer such as the TCA9548A - an example is provided.
-
-As with all Arduino libraries, I recommend either copying to the libaries subfolder of your sketchbook directory, or (as I prefer) create a symbolic link there to the location where you actually installed it, i.e.:
-```
-mklink /D C:\Users\alast\Documents\Arduino\libraries\TCS34725 C:\Users\alast\Documents\GitHub\TCS34725
-```
-
 ## Description
 
 This library is partially ported from this [circuitpython library](https://github.com/adafruit/Adafruit_CircuitPython_TCS34725).
@@ -18,6 +11,64 @@ This library is partially ported from this [circuitpython library](https://githu
 - lux and color temperature calculation (ported from [here](https://github.com/adafruit/Adafruit_CircuitPython_TCS34725))
 - interrupt feature is automatically enabled
 - various parameter adjustment through APIs
+
+## Examples
+
+As with all Arduino libraries, I recommend either copying to the libaries subfolder of your sketchbook directory, or (as I prefer) create a symbolic link there to the location where you actually installed it, i.e.:
+```
+mklink /D C:\Users\alast\Documents\Arduino\libraries\TCS34725 C:\Users\alast\Documents\GitHub\TCS34725
+```
+
+This will enable you to load example sketches in the Arduino IDE by going to _File > Examples > Examples from Custom Libraries_
+
+ - *ColourSensor* demonstrates basic functionality of connecting to the sensor and printing out raw colour data, gamma-adjusted RGB values, lux, and colour temperature to the serial monitor
+ - *MultipleSensors* demonstrates how to read 3 TCS34725 sensors connected via a TCA9548A I2C multiplexer
+ - *ColourIdentifier* demonstrates how to recognise between a set of named colours using a classification model trained through machine learning. Training data is created by copying a set of comma-delimited, floating-point values from the serial monitor, one feature per-line. This is then used to train a SciKit-Learn classification function, which is exported to a format that can be re-used in the Arduino sketch. 
+Python dependencies for creating the model are as follows: 
+``` 
+pip install -U scikit-learn
+pip install micromlgen
+```
+And the code to generate the model is:
+```
+# For loading training dataset from .csv files
+import numpy as np
+from glob import glob
+from os.path import basename
+# For classifier function
+from sklearn.ensemble import RandomForestClassifier
+# For exporting model to Arduino C code
+from micromlgen import port
+
+# Load training dataset from csv files 
+def load_features(folder):
+    dataset = None
+    classmap = {}
+    for class_idx, filename in enumerate(glob('%s/*.csv' % folder)):
+        class_name = basename(filename)[:-4]
+        classmap[class_idx] = class_name
+        samples = np.loadtxt(filename, dtype=float, delimiter=',')
+        labels = np.ones((len(samples), 1)) * class_idx
+        samples = np.hstack((samples, labels))
+        dataset = samples if dataset is None else np.vstack((dataset, samples))
+
+    return dataset, classmap
+
+# Apply classification function
+def get_classifier(features):
+    X, y = features[:, :-1], features[:, -1]
+    return RandomForestClassifier(20, max_depth=10).fit(X, y)
+
+# Load data, apply classifier, output as Arduino format 
+if __name__ == '__main__':
+    features, classmap = load_features('csv')
+    classifier = get_classifier(features)
+    c_code = port(classifier, classmap=classmap)
+    print(c_code)
+```
+(this is also contained in the "extras" folder of the repository)
+
+Note that the TCS34725 sensor uses a fixed I2C address of 0x29, which cannot be changed. So, if you want to use a TCS34725 on an I2C bus shared with other sensors that use the same address (such as the [common CAP1188 or VL53L0X sensors](https://i2cdevices.org/addresses/0x29)), or if you want to use more than one TCS34725 sensor, you'll need to use an I2C multiplexer such as the TCA9548A - an example is provided.
 
 ## Usage
 
