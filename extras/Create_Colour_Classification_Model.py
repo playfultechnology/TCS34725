@@ -2,7 +2,7 @@
 import numpy as np
 from glob import glob
 from os.path import basename
-# For classifier function 
+# For classifier function
 from sklearn.ensemble import RandomForestClassifier
 # For exporting model to Arduino C code
 from micromlgen import port
