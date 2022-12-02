@@ -1,11 +1,16 @@
 /**
- * Demonstration of reading multiple TCS34725 colour sensors
- * using a TCA9548A I2C multiplexer
+ * Demonstration of how to differentiate between and identify colours
+ * using a machine-learning model.
+ * 1.) Training data (an array of RGB float values) is captured from the Arduino serial monitor
+ * 2.) This is used to train a model in Python using the SciKit-Learn library (https://scikit-learn.org)
+ * 3.) The model is then converted into Arduino C code using MicroMLgen https://eloquentarduino.com/libraries/micromlgen/
  */
 
 // INCLUDES
 #include <Wire.h>
 #include "TCS34725.h"
+// The trained SciKit-Learn model, converted using MicroMLGen
+#include "model.h"
 
 // CONSTANTS
 // Address of TCA9548A multiplexer set by setting A0-A2 lines HIGH/LOW
@@ -16,6 +21,11 @@ const byte numSensors = 3;
 // GLOBALS
 // Initialise an array of TCS sensor objects
 TCS34725 tcs[numSensors] = {TCS34725(), TCS34725(), TCS34725()};
+// Keep an array of the most recent colour detected by each sensor
+char lastColourSeen[numSensors][10] = {};
+
+// Grab a reference to the model's classifier function
+Eloquent::ML::Port::RandomForest classifier;
 
 // Select the appropriate bus from the I2C multiplexer
 void selectBus(uint8_t bus){
@@ -52,14 +62,30 @@ void setup(void) {
 }
 
 void loop(void) {
+  bool newColourSeen = false;
   for(int i=0; i<numSensors; i++) {
     // Select the appropriate channel on the I2C multiplexer
     selectBus(i);
     if (tcs[i].available()) {
-		char buffer[50];
-		snprintf(buffer, 50, "Sensor #%d: {%.f,%.f,%.f,%.f}", i, tcs[i].color().r, tcs[i].color().g, tcs[i].color().b, tcs[i].lux());
-		Serial.println(buffer);
+      TCS34725::Color color = tcs[i].color();
+      float features[4] = { tcs[i].color().r, tcs[i].color().g, tcs[i].color().b, tcs[i].lux() };
+      char* colourSeen = (char*)classifier.predictLabel(features);
+      //Serial.print(colourSeen);
+      if(strcmp(lastColourSeen[i], colourSeen) != 0) {
+        newColourSeen = true;
+        strncpy(lastColourSeen[i], colourSeen, 10);
+      }
     }
   }
+
+  if(newColourSeen) {
+    for(int i=0; i<numSensors; i++) {
+      Serial.print(lastColourSeen[i]);
+      if(i<numSensors-1) { Serial.print(","); }
+      else Serial.println("");
+    }
+  }
+
+
   delay(1000);
 }
